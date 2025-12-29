@@ -202,4 +202,144 @@ describe('TimeEntry component', () => {
     const colorBar = container.querySelector('[style*="background-color"]');
     expect(colorBar).toHaveStyle({ backgroundColor: '#6B7280' });
   });
+
+  describe('in-progress entries (no endTime)', () => {
+    const inProgressEntry: TimeEntryType = {
+      ...mockEntry,
+      endTime: undefined,
+    };
+
+    it('shows "In Progress" badge when endTime is not set', () => {
+      render(
+        <TimeEntry
+          entry={inProgressEntry}
+          activities={mockActivities}
+          onEdit={mockOnEdit}
+          onDelete={mockOnDelete}
+        />
+      );
+
+      expect(screen.getByText('In Progress')).toBeInTheDocument();
+    });
+
+    it('shows "..." instead of end time when endTime is not set', () => {
+      render(
+        <TimeEntry
+          entry={inProgressEntry}
+          activities={mockActivities}
+          onEdit={mockOnEdit}
+          onDelete={mockOnDelete}
+        />
+      );
+
+      expect(screen.getByText('9:00 AM - ...')).toBeInTheDocument();
+    });
+
+    it('does not show duration when endTime is not set', () => {
+      render(
+        <TimeEntry
+          entry={inProgressEntry}
+          activities={mockActivities}
+          onEdit={mockOnEdit}
+          onDelete={mockOnDelete}
+        />
+      );
+
+      expect(screen.queryByText(/\d+h/)).not.toBeInTheDocument();
+    });
+  });
+
+  describe('canEdit prop', () => {
+    it('hides edit button when canEdit is false', () => {
+      render(
+        <TimeEntry
+          entry={mockEntry}
+          activities={mockActivities}
+          onEdit={mockOnEdit}
+          onDelete={mockOnDelete}
+          canEdit={false}
+        />
+      );
+
+      expect(screen.queryByRole('button', { name: /edit entry/i })).not.toBeInTheDocument();
+    });
+
+    it('shows edit button when canEdit is true', () => {
+      render(
+        <TimeEntry
+          entry={mockEntry}
+          activities={mockActivities}
+          onEdit={mockOnEdit}
+          onDelete={mockOnDelete}
+          canEdit={true}
+        />
+      );
+
+      expect(screen.getByRole('button', { name: /edit entry/i })).toBeInTheDocument();
+    });
+  });
+
+  describe('canDelete prop', () => {
+    it('disables delete button when canDelete is false', () => {
+      render(
+        <TimeEntry
+          entry={mockEntry}
+          activities={mockActivities}
+          onEdit={mockOnEdit}
+          onDelete={mockOnDelete}
+          canDelete={false}
+        />
+      );
+
+      const deleteButton = screen.getByRole('button', { name: /delete entry/i });
+      expect(deleteButton).toBeDisabled();
+    });
+
+    it('does not call onDelete when delete button is clicked and canDelete is false', () => {
+      render(
+        <TimeEntry
+          entry={mockEntry}
+          activities={mockActivities}
+          onEdit={mockOnEdit}
+          onDelete={mockOnDelete}
+          canDelete={false}
+        />
+      );
+
+      const deleteButton = screen.getByRole('button', { name: /delete entry/i });
+      fireEvent.click(deleteButton);
+
+      expect(mockOnDelete).not.toHaveBeenCalled();
+    });
+
+    it('enables delete button when canDelete is true', () => {
+      render(
+        <TimeEntry
+          entry={mockEntry}
+          activities={mockActivities}
+          onEdit={mockOnEdit}
+          onDelete={mockOnDelete}
+          canDelete={true}
+        />
+      );
+
+      const deleteButton = screen.getByRole('button', { name: /delete entry/i });
+      expect(deleteButton).not.toBeDisabled();
+    });
+
+    it('shows tooltip on disabled delete button', () => {
+      render(
+        <TimeEntry
+          entry={mockEntry}
+          activities={mockActivities}
+          onEdit={mockOnEdit}
+          onDelete={mockOnDelete}
+          canDelete={false}
+        />
+      );
+
+      const deleteButton = screen.getByRole('button', { name: /delete entry/i });
+      expect(deleteButton).toHaveAttribute('title', 'Cannot delete - add end time first');
+    });
+  });
 });

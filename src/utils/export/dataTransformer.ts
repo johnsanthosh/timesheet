@@ -3,7 +3,9 @@ import type { ExportDetailedRow, ExportSummaryRow } from './types';
 import { calculateDuration, formatTimeForDisplay } from '../timezone';
 import { format, parse } from 'date-fns';
 
-function calculateDurationMinutes(startTime: string, endTime: string): number {
+function calculateDurationMinutes(startTime: string, endTime?: string): number {
+  if (!endTime) return 0;
+
   const [startHours, startMinutes] = startTime.split(':').map(Number);
   const [endHours, endMinutes] = endTime.split(':').map(Number);
 
@@ -44,8 +46,8 @@ export function transformToDetailedRows(
       userName: users[entry.userId]?.displayName || 'Unknown User',
       activity: getActivityLabel(entry.activity, activities),
       startTime: formatTimeForDisplay(entry.startTime),
-      endTime: formatTimeForDisplay(entry.endTime),
-      duration: calculateDuration(entry.startTime, entry.endTime),
+      endTime: entry.endTime ? formatTimeForDisplay(entry.endTime) : 'In Progress',
+      duration: calculateDuration(entry.startTime, entry.endTime) || 'In Progress',
       durationMinutes: calculateDurationMinutes(entry.startTime, entry.endTime),
       notes: entry.notes || '',
     }));

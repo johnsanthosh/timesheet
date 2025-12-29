@@ -127,6 +127,26 @@ describe('dataTransformer', () => {
       const entryWithoutNotes = rows.find(r => r.startTime === '10:30 AM');
       expect(entryWithoutNotes?.notes).toBe('');
     });
+
+    it('shows "In Progress" for entries without endTime', () => {
+      const inProgressEntry: TimeEntry[] = [
+        {
+          id: 'entry1',
+          userId: 'user1',
+          date: '2024-01-15',
+          activity: 'meeting',
+          startTime: '09:00',
+          endTime: undefined,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+
+      const rows = transformToDetailedRows(inProgressEntry, mockUsers, mockActivities);
+      expect(rows[0].endTime).toBe('In Progress');
+      expect(rows[0].duration).toBe('In Progress');
+      expect(rows[0].durationMinutes).toBe(0);
+    });
   });
 
   describe('transformToSummaryRows', () => {

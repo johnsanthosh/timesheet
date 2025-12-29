@@ -44,12 +44,21 @@ service cloud.firestore {
         (resource.data.userId == request.auth.uid || isAdmin());
     }
 
-    // Config collection
+    // Config collection (legacy)
     match /config/{configId} {
       // Anyone authenticated can read config
       allow read: if request.auth != null;
 
       // Only admins can write config
+      allow write: if isAdmin();
+    }
+
+    // Settings collection
+    match /settings/{settingId} {
+      // Anyone authenticated can read settings
+      allow read: if request.auth != null;
+
+      // Only admins can write settings
       allow write: if isAdmin();
     }
   }

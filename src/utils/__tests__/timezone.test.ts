@@ -58,6 +58,14 @@ describe('timezone utility functions', () => {
       expect(calculateDuration('22:00', '06:00')).toBe('8h');
       expect(calculateDuration('23:30', '00:30')).toBe('1h');
     });
+
+    it('returns null when endTime is undefined', () => {
+      expect(calculateDuration('09:00', undefined)).toBeNull();
+    });
+
+    it('returns null when endTime is empty string', () => {
+      expect(calculateDuration('09:00', '')).toBeNull();
+    });
   });
 
   describe('getTimezoneName', () => {

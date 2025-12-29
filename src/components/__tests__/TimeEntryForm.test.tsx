@@ -313,4 +313,182 @@ describe('TimeEntryForm component', () => {
     // Form should retain values
     expect(screen.getByRole('combobox')).toHaveValue('meeting');
   });
+
+  describe('endTimeOnlyMode prop', () => {
+    const inProgressEntry: TimeEntry = {
+      id: 'entry1',
+      userId: 'user1',
+      date: '2024-01-15',
+      activity: 'meeting',
+      startTime: '09:00',
+      endTime: undefined,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    it('shows "Add End Time" title when endTimeOnlyMode is true', () => {
+      render(
+        <TimeEntryForm
+          activities={mockActivities}
+          onSubmit={mockOnSubmit}
+          editingEntry={inProgressEntry}
+          endTimeOnlyMode={true}
+        />
+      );
+
+      expect(screen.getByText('Add End Time')).toBeInTheDocument();
+    });
+
+    it('shows info message when endTimeOnlyMode is true', () => {
+      render(
+        <TimeEntryForm
+          activities={mockActivities}
+          onSubmit={mockOnSubmit}
+          editingEntry={inProgressEntry}
+          endTimeOnlyMode={true}
+        />
+      );
+
+      expect(screen.getByText(/activity and start time cannot be changed/i)).toBeInTheDocument();
+    });
+
+    it('disables activity dropdown when endTimeOnlyMode is true', () => {
+      render(
+        <TimeEntryForm
+          activities={mockActivities}
+          onSubmit={mockOnSubmit}
+          editingEntry={inProgressEntry}
+          endTimeOnlyMode={true}
+        />
+      );
+
+      expect(screen.getByRole('combobox')).toBeDisabled();
+    });
+
+    it('disables start time input when endTimeOnlyMode is true', () => {
+      render(
+        <TimeEntryForm
+          activities={mockActivities}
+          onSubmit={mockOnSubmit}
+          editingEntry={inProgressEntry}
+          endTimeOnlyMode={true}
+        />
+      );
+
+      expect(screen.getByLabelText(/start time/i)).toBeDisabled();
+    });
+
+    it('disables start time "Now" button when endTimeOnlyMode is true', () => {
+      render(
+        <TimeEntryForm
+          activities={mockActivities}
+          onSubmit={mockOnSubmit}
+          editingEntry={inProgressEntry}
+          endTimeOnlyMode={true}
+        />
+      );
+
+      const nowButtons = screen.getAllByRole('button', { name: /now/i });
+      expect(nowButtons[0]).toBeDisabled();
+    });
+
+    it('keeps end time input enabled when endTimeOnlyMode is true', () => {
+      render(
+        <TimeEntryForm
+          activities={mockActivities}
+          onSubmit={mockOnSubmit}
+          editingEntry={inProgressEntry}
+          endTimeOnlyMode={true}
+        />
+      );
+
+      expect(screen.getByLabelText(/end time/i)).not.toBeDisabled();
+    });
+
+    it('keeps notes input enabled when endTimeOnlyMode is true', () => {
+      render(
+        <TimeEntryForm
+          activities={mockActivities}
+          onSubmit={mockOnSubmit}
+          editingEntry={inProgressEntry}
+          endTimeOnlyMode={true}
+        />
+      );
+
+      expect(screen.getByLabelText(/notes/i)).not.toBeDisabled();
+    });
+
+    it('makes end time required when endTimeOnlyMode is true', () => {
+      render(
+        <TimeEntryForm
+          activities={mockActivities}
+          onSubmit={mockOnSubmit}
+          editingEntry={inProgressEntry}
+          endTimeOnlyMode={true}
+        />
+      );
+
+      expect(screen.getByLabelText(/end time/i)).toHaveAttribute('required');
+    });
+  });
+
+  describe('optional endTime', () => {
+    it('submits without endTime when field is empty', async () => {
+      const user = userEvent.setup();
+
+      render(
+        <TimeEntryForm
+          activities={mockActivities}
+          onSubmit={mockOnSubmit}
+        />
+      );
+
+      // Select activity
+      await user.selectOptions(screen.getByRole('combobox'), 'meeting');
+
+      // Set start time (end time left empty)
+      const startTimeInput = screen.getByLabelText(/start time/i);
+      fireEvent.change(startTimeInput, { target: { value: '09:00' } });
+
+      // Clear end time
+      const endTimeInput = screen.getByLabelText(/end time/i);
+      fireEvent.change(endTimeInput, { target: { value: '' } });
+
+      // Submit
+      fireEvent.click(screen.getByRole('button', { name: /log time/i }));
+
+      await waitFor(() => {
+        expect(mockOnSubmit).toHaveBeenCalledWith({
+          activity: 'meeting',
+          startTime: '09:00',
+          endTime: undefined,
+          notes: undefined,
+        });
+      });
+    });
+
+    it('shows optional label for end time', () => {
+      render(
+        <TimeEntryForm
+          activities={mockActivities}
+          onSubmit={mockOnSubmit}
+        />
+      );
+
+      // Both end time and notes have "(optional)" labels
+      const optionalLabels = screen.getAllByText('(optional)');
+      expect(optionalLabels.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('shows hint text for leaving end time empty', () => {
+      render(
+        <TimeEntryForm
+          activities={mockActivities}
+          onSubmit={mockOnSubmit}
+        />
+      );
+
+      expect(screen.getByText(/leave empty to mark as in progress/i)).toBeInTheDocument();
+    });
+  });
 });

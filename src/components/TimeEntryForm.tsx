@@ -7,11 +7,12 @@ interface TimeEntryFormProps {
   onSubmit: (data: {
     activity: string;
     startTime: string;
-    endTime: string;
+    endTime?: string;
     notes?: string;
   }) => Promise<void>;
   onCancel?: () => void;
   editingEntry?: TimeEntry | null;
+  endTimeOnlyMode?: boolean; // When true, user can only add end time (activity/start time are locked)
 }
 
 export function TimeEntryForm({
@@ -19,6 +20,7 @@ export function TimeEntryForm({
   onSubmit,
   onCancel,
   editingEntry,
+  endTimeOnlyMode = false,
 }: TimeEntryFormProps) {
   const [activity, setActivity] = useState(editingEntry?.activity || '');
   const [startTime, setStartTime] = useState(
@@ -32,7 +34,7 @@ export function TimeEntryForm({
     if (editingEntry) {
       setActivity(editingEntry.activity);
       setStartTime(editingEntry.startTime);
-      setEndTime(editingEntry.endTime);
+      setEndTime(editingEntry.endTime || '');
       setNotes(editingEntry.notes || '');
     }
   }, [editingEntry]);
@@ -40,7 +42,7 @@ export function TimeEntryForm({
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
-    if (!activity || !startTime || !endTime) {
+    if (!activity || !startTime) {
       return;
     }
 
@@ -49,7 +51,7 @@ export function TimeEntryForm({
       await onSubmit({
         activity,
         startTime,
-        endTime,
+        endTime: endTime || undefined,
         notes: notes || undefined,
       });
 
@@ -75,8 +77,16 @@ export function TimeEntryForm({
   return (
     <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">
-        {editingEntry ? 'Edit Time Entry' : 'Log Time'}
+        {endTimeOnlyMode ? 'Add End Time' : editingEntry ? 'Edit Time Entry' : 'Log Time'}
       </h3>
+
+      {endTimeOnlyMode && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-100 rounded-lg">
+          <p className="text-sm text-blue-700">
+            Add the end time and any notes to complete this entry. Activity and start time cannot be changed.
+          </p>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Activity */}
@@ -91,8 +101,11 @@ export function TimeEntryForm({
             id="activity"
             value={activity}
             onChange={(e) => setActivity(e.target.value)}
-            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm sm:text-base"
+            className={`w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm sm:text-base ${
+              endTimeOnlyMode ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''
+            }`}
             required
+            disabled={endTimeOnlyMode}
           >
             <option value="">Select an activity</option>
             {activities.map((act) => (
@@ -117,13 +130,17 @@ export function TimeEntryForm({
               id="startTime"
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
-              className="flex-1 min-w-0 px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+              className={`flex-1 min-w-0 px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base ${
+                endTimeOnlyMode ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''
+              }`}
               required
+              disabled={endTimeOnlyMode}
             />
             <button
               type="button"
               onClick={setCurrentTimeAsStart}
-              className="px-3 py-2.5 text-sm font-medium bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex-shrink-0"
+              className="px-3 py-2.5 text-sm font-medium bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={endTimeOnlyMode}
             >
               Now
             </button>
@@ -136,7 +153,8 @@ export function TimeEntryForm({
             htmlFor="endTime"
             className="block text-sm font-medium text-gray-700 mb-1.5"
           >
-            End Time
+            End Time {!endTimeOnlyMode && <span className="text-gray-400 font-normal">(optional)</span>}
+            {endTimeOnlyMode && <span className="text-red-500">*</span>}
           </label>
           <div className="flex gap-2">
             <input
@@ -145,7 +163,8 @@ export function TimeEntryForm({
               value={endTime}
               onChange={(e) => setEndTime(e.target.value)}
               className="flex-1 min-w-0 px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
-              required
+              placeholder="Leave empty if in progress"
+              required={endTimeOnlyMode}
             />
             <button
               type="button"
@@ -155,6 +174,9 @@ export function TimeEntryForm({
               Now
             </button>
           </div>
+          {!endTime && !endTimeOnlyMode && (
+            <p className="text-xs text-gray-500 mt-1">Leave empty to mark as in progress</p>
+          )}
         </div>
 
         {/* Notes */}

@@ -15,7 +15,7 @@ export interface TimeEntry {
   date: string; // YYYY-MM-DD
   activity: string;
   startTime: string; // HH:mm
-  endTime: string; // HH:mm
+  endTime?: string; // HH:mm - optional, entry is "in progress" until set
   notes?: string;
   createdAt: Date;
   updatedAt: Date;

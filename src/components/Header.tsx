@@ -45,6 +45,9 @@ export function Header() {
                 <Link to="/activities" className={navLinkClass('/activities')}>
                   Activities
                 </Link>
+                <Link to="/settings" className={navLinkClass('/settings')}>
+                  Settings
+                </Link>
               </>
             )}
           </nav>
@@ -142,6 +145,13 @@ export function Header() {
                 onClick={closeMobileMenu}
               >
                 Activities
+              </Link>
+              <Link
+                to="/settings"
+                className={navLinkClass('/settings', true)}
+                onClick={closeMobileMenu}
+              >
+                Settings
               </Link>
             </>
           )}

@@ -55,7 +55,12 @@ export function formatTimeForDisplay(time: string): string {
 }
 
 // Calculate duration between two times (both should be in same timezone)
-export function calculateDuration(startTime: string, endTime: string): string {
+// Returns null if endTime is not provided (entry in progress)
+export function calculateDuration(startTime: string, endTime?: string): string | null {
+  if (!endTime) {
+    return null;
+  }
+
   const [startHours, startMinutes] = startTime.split(':').map(Number);
   const [endHours, endMinutes] = endTime.split(':').map(Number);
 

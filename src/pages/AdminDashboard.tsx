@@ -97,7 +97,7 @@ export function AdminDashboard() {
   const handleUpdateEntry = async (data: {
     activity: string;
     startTime: string;
-    endTime: string;
+    endTime?: string;
     notes?: string;
   }) => {
     if (!editingEntry) return;
@@ -140,19 +140,24 @@ export function AdminDashboard() {
   // Calculate summary by user
   const summaryByUser = entries.reduce((acc, entry) => {
     if (!acc[entry.userId]) {
-      acc[entry.userId] = { totalMinutes: 0, entries: 0 };
+      acc[entry.userId] = { totalMinutes: 0, entries: 0, inProgress: 0 };
+    }
+    acc[entry.userId].entries += 1;
+    if (!entry.endTime) {
+      acc[entry.userId].inProgress += 1;
+      return acc;
     }
     const [startHours, startMinutes] = entry.startTime.split(':').map(Number);
     const [endHours, endMinutes] = entry.endTime.split(':').map(Number);
     let minutes = (endHours * 60 + endMinutes) - (startHours * 60 + startMinutes);
     if (minutes < 0) minutes += 24 * 60;
     acc[entry.userId].totalMinutes += minutes;
-    acc[entry.userId].entries += 1;
     return acc;
-  }, {} as Record<string, { totalMinutes: number; entries: number }>);
+  }, {} as Record<string, { totalMinutes: number; entries: number; inProgress: number }>);
 
-  // Calculate total hours
+  // Calculate total hours and in-progress count
   const totalMinutes = Object.values(summaryByUser).reduce((sum, s) => sum + s.totalMinutes, 0);
+  const totalInProgress = Object.values(summaryByUser).reduce((sum, s) => sum + s.inProgress, 0);
   const totalHours = Math.floor(totalMinutes / 60);
   const totalMins = totalMinutes % 60;
 
@@ -204,6 +209,11 @@ export function AdminDashboard() {
                 <div className="text-xl font-bold text-blue-700">
                   {totalHours}h {totalMins}m
                 </div>
+                {totalInProgress > 0 && (
+                  <div className="text-xs text-amber-600 mt-0.5">
+                    +{totalInProgress} in progress
+                  </div>
+                )}
               </div>
             </div>
 
@@ -261,6 +271,11 @@ export function AdminDashboard() {
               <div className="text-xl font-bold text-blue-700">
                 {totalHours}h {totalMins}m
               </div>
+              {totalInProgress > 0 && (
+                <div className="text-xs text-amber-600 mt-0.5">
+                  +{totalInProgress} in progress
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -305,6 +320,11 @@ export function AdminDashboard() {
                   </div>
                   <div className="text-xs text-gray-400">
                     {summary.entries} {summary.entries === 1 ? 'entry' : 'entries'}
+                    {summary.inProgress > 0 && (
+                      <span className="text-amber-600 ml-1">
+                        ({summary.inProgress} in progress)
+                      </span>
+                    )}
                   </div>
                 </button>
               );

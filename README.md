@@ -5,9 +5,10 @@ A modern, responsive React-based timesheet application with Firebase backend for
 ## Features
 
 ### Core Features
-- **Time Tracking**: Log work hours with start/end times, activity type, and optional notes
+- **Time Tracking**: Log work hours with start time, optional end time, activity type, and notes
+- **In-Progress Entries**: Start tracking time without knowing the end time; add end time later
 - **Date Navigation**: Easy navigation between dates with quick-select options
-- **Real-time Totals**: Automatic calculation of daily hours worked
+- **Real-time Totals**: Automatic calculation of daily hours worked (excluding in-progress entries)
 
 ### User Management
 - **Email/Password Authentication**: Secure login via Firebase Auth
@@ -24,6 +25,12 @@ A modern, responsive React-based timesheet application with Firebase backend for
 - **User Filtering**: Filter entries by specific user
 - **Edit/Delete Entries**: Admins can modify any user's time entries
 - **Summary Cards**: Quick overview of hours per user
+
+### Entry Editing Rules
+- **In-Progress Entries**: Users can only add end time and notes (cannot change activity or start time, cannot delete)
+- **Completed Entries**: Once an end time is set, only admins can edit/delete the entry
+- **Date Restriction**: Users can only add new entries for today's date
+- **Admin Override**: Admins can add/edit/delete any entries for any date, with full edit access
 
 ### Export & Reporting
 - **PDF Export**: Professional PDF reports with company branding
@@ -191,7 +198,7 @@ Stores all time entries.
 | `date` | string | Date in YYYY-MM-DD format |
 | `activity` | string | Activity ID |
 | `startTime` | string | Start time in HH:mm (UTC) |
-| `endTime` | string | End time in HH:mm (UTC) |
+| `endTime` | string? | End time in HH:mm (UTC) - optional, entry is "in progress" if not set |
 | `notes` | string | Optional notes |
 | `createdAt` | timestamp | Entry creation date |
 | `updatedAt` | timestamp | Last update date |
@@ -206,6 +213,15 @@ Stores available activity types.
 | `createdAt` | timestamp | Creation date |
 | `updatedAt` | timestamp | Last update date |
 
+#### `settings`
+Stores application settings (single document: `appConfig`).
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `allowUserEdits` | boolean | Whether users can edit/delete their existing entries (adding new entries for today is always allowed) |
+| `updatedAt` | timestamp | Last update date |
+| `updatedBy` | string | UID of admin who last updated settings |
+
 ### Security Rules
 
 See [`firestore.rules`](./firestore.rules) for the complete security rules. Key permissions:
@@ -217,6 +233,7 @@ See [`firestore.rules`](./firestore.rules) for the complete security rules. Key 
 | Own user document | Read | - |
 | All user documents | - | Read, Create, Update, Delete* |
 | Activities | Read | Read, Create, Update, Delete |
+| Settings | Read | Read, Write |
 
 *Admins cannot delete themselves
 
@@ -241,12 +258,14 @@ See [`firestore.rules`](./firestore.rules) for the complete security rules. Key 
 │   │   ├── Dashboard.tsx     # User's timesheet view
 │   │   ├── AdminDashboard.tsx # Admin view of all timesheets
 │   │   ├── UserManagement.tsx # User CRUD page
-│   │   └── ActivityManagement.tsx # Activity CRUD page
+│   │   ├── ActivityManagement.tsx # Activity CRUD page
+│   │   └── AdminSettings.tsx # Admin settings page
 │   ├── services/
 │   │   ├── firebase.ts       # Firebase initialization
 │   │   ├── auth.ts           # Authentication functions
 │   │   ├── timesheet.ts      # Time entry CRUD
-│   │   └── activities.ts     # Activity CRUD
+│   │   ├── activities.ts     # Activity CRUD
+│   │   └── settings.ts       # App settings management
 │   ├── utils/
 │   │   ├── timezone.ts       # Timezone utilities
 │   │   └── export/           # PDF/CSV export utilities
@@ -273,14 +292,17 @@ See [`firestore.rules`](./firestore.rules) for the complete security rules. Key 
 
 1. **Login**: Enter your email and password
 2. **View Timesheet**: Your current day's entries are shown
-3. **Log Time**:
+3. **Log Time** (today only):
    - Select an activity from the dropdown
-   - Set start and end times (use "Now" buttons for current time)
+   - Set start time (use "Now" button for current time)
+   - End time is optional - leave empty to mark as "In Progress"
    - Optionally add notes
    - Click "Log Time"
-4. **Edit Entry**: Click the pencil icon on any entry
-5. **Delete Entry**: Click the trash icon on any entry
-6. **Navigate Dates**: Use arrows or click the date to pick a different day
+4. **Complete Entry**: Click the pencil icon on an in-progress entry to add end time and notes
+   - Activity and start time cannot be changed
+   - Once end time is added, the entry is locked
+5. **Navigate Dates**: Use arrows or click the date to view entries for other days
+   - Note: You can only add new entries for today's date
 
 ### For Admins
 
@@ -309,6 +331,14 @@ See [`firestore.rules`](./firestore.rules) for the complete security rules. Key 
    - Choose type: Detailed (individual entries) or Summary (totals)
    - Choose scope: All users or specific user
    - Click "Export" to download
+
+5. **View Settings**:
+   - Navigate to "Settings" in the menu
+   - View information about entry editing rules:
+     - Users can only add end time and notes to in-progress entries
+     - Users cannot delete entries (only admins can)
+     - Once an entry has an end time, only admins can modify it
+     - Users can only add entries for today's date
 
 ## Scripts
 

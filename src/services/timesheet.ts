@@ -24,7 +24,7 @@ function parseEntry(doc: { id: string; data: () => Record<string, unknown> }): T
   const data = doc.data();
   const date = data.date as string;
   const startTimeUTC = data.startTime as string;
-  const endTimeUTC = data.endTime as string;
+  const endTimeUTC = data.endTime as string | undefined;
 
   // Convert UTC times to local timezone for display
   return {
@@ -33,7 +33,7 @@ function parseEntry(doc: { id: string; data: () => Record<string, unknown> }): T
     date,
     activity: data.activity as string,
     startTime: utcTimeToLocal(date, startTimeUTC),
-    endTime: utcTimeToLocal(date, endTimeUTC),
+    endTime: endTimeUTC ? utcTimeToLocal(date, endTimeUTC) : undefined,
     notes: data.notes as string | undefined,
     createdAt: convertTimestamp(data.createdAt as Timestamp | null),
     updatedAt: convertTimestamp(data.updatedAt as Timestamp | null),
@@ -53,7 +53,6 @@ export async function createTimeEntry(
 ): Promise<TimeEntry> {
   // Convert local times to UTC for storage
   const startTimeUTC = localTimeToUTC(data.date, data.startTime);
-  const endTimeUTC = localTimeToUTC(data.date, data.endTime);
 
   // Remove undefined values (Firestore doesn't accept them)
   const cleanData: Record<string, unknown> = {
@@ -61,10 +60,14 @@ export async function createTimeEntry(
     date: data.date,
     activity: data.activity,
     startTime: startTimeUTC,
-    endTime: endTimeUTC,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   };
+
+  // Only add endTime if it has a value
+  if (data.endTime) {
+    cleanData.endTime = localTimeToUTC(data.date, data.endTime);
+  }
 
   // Only add notes if it has a value
   if (data.notes) {

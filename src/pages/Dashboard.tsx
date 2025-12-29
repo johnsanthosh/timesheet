@@ -18,12 +18,16 @@ import type { TimeEntry as TimeEntryType, Activity } from '../types';
 import toast from 'react-hot-toast';
 
 export function Dashboard() {
-  const { appUser } = useAuth();
+  const { appUser, isAdmin } = useAuth();
   const [entries, setEntries] = useState<TimeEntryType[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [selectedDate, setSelectedDate] = useState(getCurrentLocalDate());
   const [editingEntry, setEditingEntry] = useState<TimeEntryType | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Check if selected date is today (for non-admin restriction)
+  const isToday = selectedDate === getCurrentLocalDate();
+  const canAddEntries = isAdmin || isToday;
 
   useEffect(() => {
     loadActivities();
@@ -60,7 +64,7 @@ export function Dashboard() {
   const handleCreateEntry = async (data: {
     activity: string;
     startTime: string;
-    endTime: string;
+    endTime?: string;
     notes?: string;
   }) => {
     if (!appUser?.uid) return;
@@ -83,7 +87,7 @@ export function Dashboard() {
   const handleUpdateEntry = async (data: {
     activity: string;
     startTime: string;
-    endTime: string;
+    endTime?: string;
     notes?: string;
   }) => {
     if (!editingEntry) return;
@@ -133,12 +137,16 @@ export function Dashboard() {
   };
 
   const totalHours = entries.reduce((total, entry) => {
+    if (!entry.endTime) return total; // Skip in-progress entries
     const [startHours, startMinutes] = entry.startTime.split(':').map(Number);
     const [endHours, endMinutes] = entry.endTime.split(':').map(Number);
     let minutes = (endHours * 60 + endMinutes) - (startHours * 60 + startMinutes);
     if (minutes < 0) minutes += 24 * 60;
     return total + minutes;
   }, 0);
+
+  // Count in-progress entries
+  const inProgressCount = entries.filter(e => !e.endTime).length;
 
   const hoursDisplay = `${Math.floor(totalHours / 60)}h ${totalHours % 60}m`;
 
@@ -195,20 +203,72 @@ export function Dashboard() {
                 <div className="text-lg sm:text-xl font-bold text-blue-700">
                   {hoursDisplay}
                 </div>
+                {inProgressCount > 0 && (
+                  <div className="text-xs text-amber-600 mt-0.5">
+                    +{inProgressCount} in progress
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
 
         {/* Time Entry Form */}
-        <div className="mb-6">
-          <TimeEntryForm
-            activities={activities}
-            onSubmit={editingEntry ? handleUpdateEntry : handleCreateEntry}
-            onCancel={editingEntry ? () => setEditingEntry(null) : undefined}
-            editingEntry={editingEntry}
-          />
-        </div>
+        {editingEntry ? (
+          // Editing an existing entry
+          // Users can only edit entries without endTime, admins can edit any
+          (isAdmin || !editingEntry.endTime) ? (
+            <div className="mb-6">
+              <TimeEntryForm
+                activities={activities}
+                onSubmit={handleUpdateEntry}
+                onCancel={() => setEditingEntry(null)}
+                editingEntry={editingEntry}
+                endTimeOnlyMode={!isAdmin && !editingEntry.endTime}
+              />
+            </div>
+          ) : (
+            <div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4">
+              <div className="flex items-center gap-3">
+                <svg className="w-5 h-5 text-amber-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <div>
+                  <p className="text-sm font-medium text-amber-800">Cannot edit completed entry</p>
+                  <p className="text-sm text-amber-700">Once an end time is set, only administrators can modify this entry.</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setEditingEntry(null)}
+                className="mt-3 text-sm text-amber-700 hover:text-amber-800 underline"
+              >
+                Cancel
+              </button>
+            </div>
+          )
+        ) : (
+          // Adding a new entry
+          canAddEntries ? (
+            <div className="mb-6">
+              <TimeEntryForm
+                activities={activities}
+                onSubmit={handleCreateEntry}
+              />
+            </div>
+          ) : (
+            <div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4">
+              <div className="flex items-center gap-3">
+                <svg className="w-5 h-5 text-amber-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <div>
+                  <p className="text-sm font-medium text-amber-800">Cannot add entries for this date</p>
+                  <p className="text-sm text-amber-700">You can only add time entries for today's date.</p>
+                </div>
+              </div>
+            </div>
+          )
+        )}
 
         {/* Time Entries List */}
         {loading ? (
@@ -225,15 +285,24 @@ export function Dashboard() {
           </div>
         ) : (
           <div className="space-y-3">
-            {entries.map((entry) => (
-              <TimeEntry
-                key={entry.id}
-                entry={entry}
-                activities={activities}
-                onEdit={setEditingEntry}
-                onDelete={handleDeleteEntry}
-              />
-            ))}
+            {entries.map((entry) => {
+              // Users can only edit in-progress entries (to add end time)
+              // Once endTime is set, only admins can modify
+              const entryCanEdit = isAdmin || (!entry.endTime && isToday);
+              // Users cannot delete in-progress entries - only admins can delete
+              const entryCanDelete = isAdmin;
+              return (
+                <TimeEntry
+                  key={entry.id}
+                  entry={entry}
+                  activities={activities}
+                  onEdit={setEditingEntry}
+                  onDelete={handleDeleteEntry}
+                  canEdit={entryCanEdit}
+                  canDelete={entryCanDelete}
+                />
+              );
+            })}
           </div>
         )}
       </main>
