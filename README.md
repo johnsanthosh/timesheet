@@ -39,7 +39,8 @@ A modern, responsive React-based timesheet application with Firebase backend for
 - **Report Types**:
   - **Detailed**: Individual time entries with all details
   - **Summary**: Daily totals grouped by user and activity
-- **Scope Options**: Export all users or a single user
+- **Filter by Users**: Select specific users or export all users
+- **Filter by Activities**: Select specific activities or export all activities
 
 ### Responsive Design
 - **Mobile-First**: Optimized for phones, tablets, and desktops
@@ -329,7 +330,8 @@ See [`firestore.rules`](./firestore.rules) for the complete security rules. Key 
    - Select date range (or use quick-select buttons)
    - Choose format: PDF or CSV
    - Choose type: Detailed (individual entries) or Summary (totals)
-   - Choose scope: All users or specific user
+   - Filter by users: Select specific users or leave empty for all
+   - Filter by activities: Select specific activities or leave empty for all
    - Click "Export" to download
 
 5. **View Settings**:

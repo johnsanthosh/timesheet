@@ -12,10 +12,7 @@ import {
   generateSummaryPDF,
   downloadPDF,
 } from '../utils/export';
-import {
-  getTimeEntriesByDateRange,
-  getAllTimeEntriesByDateRange,
-} from '../services/timesheet';
+import { getAllTimeEntriesByDateRange } from '../services/timesheet';
 import { getTimezoneAbbreviation } from '../utils/timezone';
 
 interface UseExportReturn {
@@ -41,26 +38,69 @@ export function useExport(): UseExportReturn {
     setExportError(null);
 
     try {
-      const entries =
-        config.scope === 'single' && config.userId
-          ? await getTimeEntriesByDateRange(config.userId, config.startDate, config.endDate)
-          : await getAllTimeEntriesByDateRange(config.startDate, config.endDate);
+      let entries = await getAllTimeEntriesByDateRange(config.startDate, config.endDate);
+
+      // Filter by selected users if specified
+      if (config.selectedUserIds && config.selectedUserIds.length > 0) {
+        entries = entries.filter((entry) => config.selectedUserIds!.includes(entry.userId));
+      }
+
+      // Filter by selected activities if specified
+      if (config.selectedActivityIds && config.selectedActivityIds.length > 0) {
+        entries = entries.filter((entry) => config.selectedActivityIds!.includes(entry.activity));
+      }
 
       if (entries.length === 0) {
-        setExportError('No time entries found for the selected date range.');
+        setExportError('No time entries found for the selected filters.');
         setIsExporting(false);
         return;
+      }
+
+      // Build scope description for metadata
+      let scopeDescription = 'All Users';
+      if (config.selectedUserIds && config.selectedUserIds.length > 0) {
+        const selectedUserNames = config.selectedUserIds
+          .map((id) => users[id]?.displayName || 'Unknown')
+          .join(', ');
+        scopeDescription = config.selectedUserIds.length === 1
+          ? selectedUserNames
+          : `${config.selectedUserIds.length} users`;
+      }
+
+      // Add activity filter to scope description
+      if (config.selectedActivityIds && config.selectedActivityIds.length > 0) {
+        const selectedActivityNames = config.selectedActivityIds
+          .map((id) => activities.find((a) => a.id === id)?.label || id)
+          .join(', ');
+        const activityDesc = config.selectedActivityIds.length === 1
+          ? selectedActivityNames
+          : `${config.selectedActivityIds.length} activities`;
+        scopeDescription += ` | ${activityDesc}`;
       }
 
       const metadata: ExportMetadata = {
         dateRange: `${config.startDate} to ${config.endDate}`,
         generatedAt: format(new Date(), 'MMM d, yyyy h:mm a'),
         timezone: getTimezoneAbbreviation(),
-        scope: config.scope === 'single' ? config.userName || 'Single User' : 'All Users',
+        scope: scopeDescription,
       };
 
-      const scopeLabel = config.scope === 'single' ? config.userName?.replace(/\s+/g, '-').toLowerCase() || 'user' : 'all';
+      // Build filename
+      let scopeLabel = 'all';
+      if (config.selectedUserIds && config.selectedUserIds.length > 0) {
+        if (config.selectedUserIds.length === 1) {
+          const userName = users[config.selectedUserIds[0]]?.displayName || 'user';
+          scopeLabel = userName.replace(/\s+/g, '-').toLowerCase();
+        } else {
+          scopeLabel = `${config.selectedUserIds.length}-users`;
+        }
+      }
       const baseFilename = `timesheet-${config.type}-${scopeLabel}-${config.startDate}-to-${config.endDate}`;
+
+      // Filter activities list for summary export (only include selected or all)
+      const filteredActivities = config.selectedActivityIds && config.selectedActivityIds.length > 0
+        ? activities.filter((a) => config.selectedActivityIds!.includes(a.id))
+        : activities;
 
       if (config.type === 'detailed') {
         const rows = transformToDetailedRows(entries, users, activities);
@@ -76,10 +116,10 @@ export function useExport(): UseExportReturn {
         const rows = transformToSummaryRows(entries, users, activities);
 
         if (config.format === 'csv') {
-          const csv = generateSummaryCSV(rows, activities, metadata);
+          const csv = generateSummaryCSV(rows, filteredActivities, metadata);
           downloadCSV(csv, `${baseFilename}.csv`);
         } else {
-          const pdf = generateSummaryPDF(rows, activities, metadata);
+          const pdf = generateSummaryPDF(rows, filteredActivities, metadata);
           downloadPDF(pdf, `${baseFilename}.pdf`);
         }
       }

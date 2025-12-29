@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import type { AppUser, Activity } from '../types';
-import type { ExportFormat, ExportType, ExportScope, ExportConfig } from '../utils/export/types';
+import type { ExportFormat, ExportType, ExportConfig } from '../utils/export/types';
 
 interface ExportModalProps {
   isOpen: boolean;
@@ -31,14 +31,46 @@ export function ExportModal({
   const [endDate, setEndDate] = useState(today);
   const [exportFormat, setExportFormat] = useState<ExportFormat>('pdf');
   const [exportType, setExportType] = useState<ExportType>('detailed');
-  const [exportScope, setExportScope] = useState<ExportScope>('all');
-  const [selectedUserId, setSelectedUserId] = useState('');
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [selectedActivityIds, setSelectedActivityIds] = useState<string[]>([]);
 
   if (!isOpen) return null;
 
   const userList = Object.values(users).sort((a, b) =>
     a.displayName.localeCompare(b.displayName)
   );
+
+  const toggleUserSelection = (userId: string) => {
+    setSelectedUserIds((prev) =>
+      prev.includes(userId)
+        ? prev.filter((id) => id !== userId)
+        : [...prev, userId]
+    );
+  };
+
+  const toggleActivitySelection = (activityId: string) => {
+    setSelectedActivityIds((prev) =>
+      prev.includes(activityId)
+        ? prev.filter((id) => id !== activityId)
+        : [...prev, activityId]
+    );
+  };
+
+  const selectAllUsers = () => {
+    setSelectedUserIds(userList.map((u) => u.uid));
+  };
+
+  const clearAllUsers = () => {
+    setSelectedUserIds([]);
+  };
+
+  const selectAllActivities = () => {
+    setSelectedActivityIds(activities.map((a) => a.id));
+  };
+
+  const clearAllActivities = () => {
+    setSelectedActivityIds([]);
+  };
 
   const handleQuickSelect = (type: 'today' | 'thisWeek' | 'thisMonth' | 'lastMonth' | 'last30') => {
     const now = new Date();
@@ -70,16 +102,14 @@ export function ExportModal({
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
-    const selectedUser = selectedUserId ? users[selectedUserId] : undefined;
-
     const config: ExportConfig = {
       format: exportFormat,
       type: exportType,
-      scope: exportScope,
-      userId: exportScope === 'single' ? selectedUserId : undefined,
-      userName: exportScope === 'single' ? selectedUser?.displayName : undefined,
+      scope: 'all',
       startDate,
       endDate,
+      selectedUserIds: selectedUserIds.length > 0 ? selectedUserIds : undefined,
+      selectedActivityIds: selectedActivityIds.length > 0 ? selectedActivityIds : undefined,
     };
 
     await onExport(config, users, activities);
@@ -265,62 +295,110 @@ export function ExportModal({
               </div>
             </div>
 
-            {/* Users */}
+            {/* Filter by Users */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Users
-              </label>
-              <div className="grid grid-cols-2 gap-3 mb-2">
-                <label
-                  className={`flex items-center justify-center gap-2 p-3 border rounded-lg cursor-pointer transition-all ${
-                    exportScope === 'all'
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="scope"
-                    value="all"
-                    checked={exportScope === 'all'}
-                    onChange={() => setExportScope('all')}
-                    className="sr-only"
-                  />
-                  <span className="text-sm font-medium">All Users</span>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Filter by Users <span className="text-gray-400 font-normal">(optional)</span>
                 </label>
-                <label
-                  className={`flex items-center justify-center gap-2 p-3 border rounded-lg cursor-pointer transition-all ${
-                    exportScope === 'single'
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="scope"
-                    value="single"
-                    checked={exportScope === 'single'}
-                    onChange={() => setExportScope('single')}
-                    className="sr-only"
-                  />
-                  <span className="text-sm font-medium">Single User</span>
-                </label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={selectAllUsers}
+                    className="text-xs text-blue-600 hover:text-blue-800"
+                  >
+                    Select All
+                  </button>
+                  <span className="text-gray-300">|</span>
+                  <button
+                    type="button"
+                    onClick={clearAllUsers}
+                    className="text-xs text-gray-500 hover:text-gray-700"
+                  >
+                    Clear
+                  </button>
+                </div>
               </div>
-              {exportScope === 'single' && (
-                <select
-                  value={selectedUserId}
-                  onChange={(e) => setSelectedUserId(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
-                  required={exportScope === 'single'}
-                >
-                  <option value="">Select a user</option>
-                  {userList.map((user) => (
-                    <option key={user.uid} value={user.uid}>
-                      {user.displayName}
-                    </option>
-                  ))}
-                </select>
-              )}
+              <div className="border border-gray-200 rounded-lg max-h-32 overflow-y-auto">
+                {userList.length === 0 ? (
+                  <p className="text-sm text-gray-500 p-3">No users available</p>
+                ) : (
+                  <div className="divide-y divide-gray-100">
+                    {userList.map((user) => (
+                      <label
+                        key={user.uid}
+                        className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedUserIds.includes(user.uid)}
+                          onChange={() => toggleUserSelection(user.uid)}
+                          className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        />
+                        <span className="text-sm text-gray-700">{user.displayName}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Leave empty to include all users
+              </p>
+            </div>
+
+            {/* Filter by Activities */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Filter by Activities <span className="text-gray-400 font-normal">(optional)</span>
+                </label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={selectAllActivities}
+                    className="text-xs text-blue-600 hover:text-blue-800"
+                  >
+                    Select All
+                  </button>
+                  <span className="text-gray-300">|</span>
+                  <button
+                    type="button"
+                    onClick={clearAllActivities}
+                    className="text-xs text-gray-500 hover:text-gray-700"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+              <div className="border border-gray-200 rounded-lg max-h-32 overflow-y-auto">
+                {activities.length === 0 ? (
+                  <p className="text-sm text-gray-500 p-3">No activities available</p>
+                ) : (
+                  <div className="divide-y divide-gray-100">
+                    {activities.map((activity) => (
+                      <label
+                        key={activity.id}
+                        className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedActivityIds.includes(activity.id)}
+                          onChange={() => toggleActivitySelection(activity.id)}
+                          className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        />
+                        <span
+                          className="w-3 h-3 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: activity.color }}
+                        />
+                        <span className="text-sm text-gray-700">{activity.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Leave empty to include all activities
+              </p>
             </div>
 
             {/* Error */}
@@ -341,7 +419,7 @@ export function ExportModal({
               </button>
               <button
                 type="submit"
-                disabled={isExporting || (exportScope === 'single' && !selectedUserId)}
+                disabled={isExporting}
                 className="w-full sm:w-auto px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm flex items-center justify-center gap-2"
               >
                 {isExporting && (

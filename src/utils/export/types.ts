@@ -10,6 +10,8 @@ export interface ExportConfig {
   userName?: string;
   startDate: string;
   endDate: string;
+  selectedUserIds?: string[];
+  selectedActivityIds?: string[];
 }
 
 export interface ExportDetailedRow {
