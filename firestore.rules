@@ -30,9 +30,9 @@ service cloud.firestore {
       allow create: if request.auth != null &&
         request.resource.data.userId == request.auth.uid;
 
-      // Users can update/delete their own entries
+      // Users can update/delete their own entries, admins can update/delete any entry
       allow update, delete: if request.auth != null &&
-        resource.data.userId == request.auth.uid;
+        (resource.data.userId == request.auth.uid || isAdmin());
     }
 
     // Config collection

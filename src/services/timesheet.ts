@@ -181,3 +181,25 @@ export async function getTimeEntriesByDateRange(
     return a.startTime.localeCompare(b.startTime);
   });
 }
+
+export async function getAllTimeEntriesByDateRange(
+  startDate: string,
+  endDate: string
+): Promise<TimeEntry[]> {
+  // Fetch all entries without userId filter
+  const q = query(collection(db, COLLECTION));
+
+  const snapshot = await getDocs(q);
+  const entries = snapshot.docs
+    .map(parseEntry)
+    .filter((entry) => entry.date >= startDate && entry.date <= endDate);
+
+  // Sort by date, then by userId, then by startTime
+  return entries.sort((a, b) => {
+    const dateCompare = a.date.localeCompare(b.date);
+    if (dateCompare !== 0) return dateCompare;
+    const userCompare = a.userId.localeCompare(b.userId);
+    if (userCompare !== 0) return userCompare;
+    return a.startTime.localeCompare(b.startTime);
+  });
+}

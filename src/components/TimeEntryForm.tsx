@@ -73,16 +73,17 @@ export function TimeEntryForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6">
-      <h3 className="text-lg font-medium text-gray-900 mb-4">
+    <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">
         {editingEntry ? 'Edit Time Entry' : 'Log Time'}
       </h3>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="md:col-span-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Activity */}
+        <div className="sm:col-span-2">
           <label
             htmlFor="activity"
-            className="block text-sm font-medium text-gray-700 mb-1"
+            className="block text-sm font-medium text-gray-700 mb-1.5"
           >
             Activity
           </label>
@@ -90,7 +91,7 @@ export function TimeEntryForm({
             id="activity"
             value={activity}
             onChange={(e) => setActivity(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm sm:text-base"
             required
           >
             <option value="">Select an activity</option>
@@ -102,82 +103,86 @@ export function TimeEntryForm({
           </select>
         </div>
 
+        {/* Start Time */}
         <div>
           <label
             htmlFor="startTime"
-            className="block text-sm font-medium text-gray-700 mb-1"
+            className="block text-sm font-medium text-gray-700 mb-1.5"
           >
             Start Time
           </label>
-          <div className="flex space-x-2">
+          <div className="flex gap-2">
             <input
               type="time"
               id="startTime"
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              className="flex-1 min-w-0 px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
               required
             />
             <button
               type="button"
               onClick={setCurrentTimeAsStart}
-              className="px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+              className="px-3 py-2.5 text-sm font-medium bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex-shrink-0"
             >
               Now
             </button>
           </div>
         </div>
 
+        {/* End Time */}
         <div>
           <label
             htmlFor="endTime"
-            className="block text-sm font-medium text-gray-700 mb-1"
+            className="block text-sm font-medium text-gray-700 mb-1.5"
           >
             End Time
           </label>
-          <div className="flex space-x-2">
+          <div className="flex gap-2">
             <input
               type="time"
               id="endTime"
               value={endTime}
               onChange={(e) => setEndTime(e.target.value)}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              className="flex-1 min-w-0 px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
               required
             />
             <button
               type="button"
               onClick={setCurrentTimeAsEnd}
-              className="px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+              className="px-3 py-2.5 text-sm font-medium bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex-shrink-0"
             >
               Now
             </button>
           </div>
         </div>
 
-        <div className="md:col-span-2">
+        {/* Notes */}
+        <div className="sm:col-span-2">
           <label
             htmlFor="notes"
-            className="block text-sm font-medium text-gray-700 mb-1"
+            className="block text-sm font-medium text-gray-700 mb-1.5"
           >
-            Notes (optional)
+            Notes <span className="text-gray-400 font-normal">(optional)</span>
           </label>
           <textarea
             id="notes"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={2}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm sm:text-base"
             placeholder="Add any notes about this activity..."
           />
         </div>
       </div>
 
-      <div className="mt-4 flex justify-end space-x-3">
+      {/* Action Buttons */}
+      <div className="mt-5 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
         {onCancel && (
           <button
             type="button"
             onClick={onCancel}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+            className="w-full sm:w-auto px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
           >
             Cancel
           </button>
@@ -185,13 +190,15 @@ export function TimeEntryForm({
         <button
           type="submit"
           disabled={loading}
-          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
+          className="w-full sm:w-auto px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow transition-all flex items-center justify-center gap-2"
         >
-          {loading
-            ? 'Saving...'
-            : editingEntry
-            ? 'Update Entry'
-            : 'Log Time'}
+          {loading && (
+            <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            </svg>
+          )}
+          {loading ? 'Saving...' : editingEntry ? 'Update Entry' : 'Log Time'}
         </button>
       </div>
     </form>

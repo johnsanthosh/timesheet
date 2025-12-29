@@ -129,75 +129,64 @@ export function Dashboard() {
   const hoursDisplay = `${Math.floor(totalHours / 60)}h ${totalHours % 60}m`;
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-50">
       <Header />
-      <main className="max-w-4xl mx-auto px-4 py-8">
-        <div className="mb-6 flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => handleDateChange('prev')}
-              className="p-2 rounded-full hover:bg-gray-200"
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+      <main className="max-w-4xl mx-auto px-4 py-6 sm:py-8">
+        {/* Date Navigation */}
+        <div className="mb-6 bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            {/* Date Picker */}
+            <div className="flex items-center justify-center sm:justify-start">
+              <button
+                onClick={() => handleDateChange('prev')}
+                className="p-2 rounded-lg hover:bg-gray-100 active:bg-gray-200 transition-colors"
+                aria-label="Previous day"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 19l-7-7 7-7"
+                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <div className="text-center mx-4">
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
+                  {formatDateForDisplay(selectedDate)}
+                </h2>
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="mt-1 text-sm text-blue-600 border-none bg-transparent cursor-pointer hover:text-blue-700 focus:outline-none"
                 />
-              </svg>
-            </button>
-            <div className="text-center">
-              <h2 className="text-xl font-semibold text-gray-900">
-                {formatDateForDisplay(selectedDate)}
-              </h2>
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="mt-1 text-sm text-gray-500 border-none bg-transparent cursor-pointer"
-              />
+              </div>
+              <button
+                onClick={() => handleDateChange('next')}
+                className="p-2 rounded-lg hover:bg-gray-100 active:bg-gray-200 transition-colors"
+                aria-label="Next day"
+              >
+                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
             </div>
-            <button
-              onClick={() => handleDateChange('next')}
-              className="p-2 rounded-full hover:bg-gray-200"
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+
+            {/* Today Button and Total */}
+            <div className="flex items-center justify-between sm:justify-end gap-4">
+              <button
+                onClick={goToToday}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-            </button>
-          </div>
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={goToToday}
-              className="px-3 py-1 text-sm bg-gray-200 rounded-md hover:bg-gray-300"
-            >
-              Today
-            </button>
-            <div className="text-right">
-              <div className="text-sm text-gray-500">Total</div>
-              <div className="text-lg font-semibold text-gray-900">
-                {hoursDisplay}
+                Today
+              </button>
+              <div className="text-right bg-blue-50 px-4 py-2 rounded-lg">
+                <div className="text-xs text-blue-600 font-medium uppercase tracking-wide">Total</div>
+                <div className="text-lg sm:text-xl font-bold text-blue-700">
+                  {hoursDisplay}
+                </div>
               </div>
             </div>
           </div>
         </div>
 
+        {/* Time Entry Form */}
         <div className="mb-6">
           <TimeEntryForm
             activities={activitiesConfig.activities}
@@ -207,13 +196,18 @@ export function Dashboard() {
           />
         </div>
 
+        {/* Time Entries List */}
         {loading ? (
-          <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <div className="flex justify-center py-12">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
           </div>
         ) : entries.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            No time entries for this date. Start logging your time!
+          <div className="text-center py-12 bg-white rounded-xl border border-gray-100">
+            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <h3 className="mt-4 text-sm font-medium text-gray-900">No time entries</h3>
+            <p className="mt-1 text-sm text-gray-500">Get started by logging your time above.</p>
           </div>
         ) : (
           <div className="space-y-3">

@@ -10,7 +10,9 @@ A React-based timesheet application with Firebase backend for tracking work hour
 - Configurable activities via JSON file
 - Timezone support (configurable by admin)
 - Admin dashboard with all users' timesheets and summary reports
+- Admin can edit/delete any user's time entries
 - User management (admin-only)
+- Export reports to PDF or CSV (detailed or summary format)
 
 ## Tech Stack
 
@@ -47,43 +49,20 @@ A React-based timesheet application with Firebase backend for tracking work hour
 ### Step 4: Deploy Security Rules (Important!)
 > **Note:** This step is required before login will work. Without these rules, you'll get "Missing or insufficient permissions" errors.
 
+**Option A: Using Firebase CLI (Recommended)**
+```bash
+firebase deploy --only firestore:rules
+```
+
+**Option B: Manual via Firebase Console**
 1. In Firestore Database, click the **Rules** tab
-2. Replace the default rules with the contents of `firestore.rules` from this project:
-
-```
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    function isAdmin() {
-      return request.auth != null &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-    }
-
-    match /users/{userId} {
-      allow read: if request.auth != null &&
-        (request.auth.uid == userId || isAdmin());
-      allow create, update: if isAdmin();
-      allow delete: if false;
-    }
-
-    match /timeEntries/{entryId} {
-      allow read: if request.auth != null &&
-        (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if request.auth != null &&
-        request.resource.data.userId == request.auth.uid;
-      allow update, delete: if request.auth != null &&
-        resource.data.userId == request.auth.uid;
-    }
-
-    match /config/{configId} {
-      allow read: if request.auth != null;
-      allow write: if isAdmin();
-    }
-  }
-}
-```
-
+2. Copy the contents of [`firestore.rules`](./firestore.rules) from this project and paste them
 3. Click **Publish**
+
+> **Note:** Always refer to the `firestore.rules` file in this repository for the latest security rules. Key permissions:
+> - Users can read/create/update/delete their own time entries
+> - Admins can read/update/delete any user's time entries
+> - Only admins can manage users
 
 ### Step 5: Get Firebase Config
 1. Click the gear icon (Settings) → **Project settings**
@@ -288,8 +267,13 @@ Edit `src/config/activities.json` to customize available activities:
 
 ### For Admins
 1. Access "All Timesheets" to view entries from all users
-2. Use "Users" to create new user accounts
-3. Click the settings icon to change the application timezone
+2. Edit or delete any user's time entries directly from the admin dashboard
+3. Use "Users" to create new user accounts
+4. Export timesheet reports as PDF or CSV:
+   - Choose date range (today, this week, this month, custom)
+   - Select detailed (individual entries) or summary (daily totals) format
+   - Export for all users or a specific user
+5. Click the settings icon to view timezone information
 
 ## Adding a Logo
 
