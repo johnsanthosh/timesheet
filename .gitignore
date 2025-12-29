@@ -35,3 +35,9 @@ firebase-service-account*.json
 *.njsproj
 *.sln
 *.sw?
+
+# Test coverage
+coverage/
+
+# Jest cache
+.jest-cache/

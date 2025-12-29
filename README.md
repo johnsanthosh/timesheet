@@ -318,7 +318,40 @@ See [`firestore.rules`](./firestore.rules) for the complete security rules. Key 
 | `npm run build` | Build for production |
 | `npm run preview` | Preview production build |
 | `npm run lint` | Run ESLint |
+| `npm run test` | Run unit tests |
+| `npm run test:watch` | Run tests in watch mode |
+| `npm run test:coverage` | Run tests with coverage report |
 | `npm run create-admin` | Create first admin user |
+
+## Testing
+
+The project uses Jest and React Testing Library for unit testing.
+
+### Test Structure
+
+```
+src/
+├── components/__tests__/     # Component tests
+├── hooks/__tests__/          # Hook tests
+├── services/__tests__/       # Service tests
+├── utils/__tests__/          # Utility function tests
+└── test/
+    ├── setup.ts              # Jest setup file
+    └── __mocks__/            # Mock files for Firebase, etc.
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with coverage report
+npm run test:coverage
+```
 
 ## Troubleshooting
 
