@@ -1,11 +1,5 @@
 {
   "activities": [
-    { "id": "development", "label": "Development", "color": "#3B82F6" },
-    { "id": "meeting", "label": "Meeting", "color": "#10B981" },
-    { "id": "review", "label": "Code Review", "color": "#F59E0B" },
-    { "id": "documentation", "label": "Documentation", "color": "#8B5CF6" },
-    { "id": "testing", "label": "Testing", "color": "#EC4899" },
-    { "id": "planning", "label": "Planning", "color": "#06B6D4" },
-    { "id": "break", "label": "Break", "color": "#6B7280" }
+    { "id": "meeting", "label": "Meeting", "color": "#10B981" }
   ]
 }

@@ -6,19 +6,20 @@ import { TimeEntry } from '../components/TimeEntry';
 import { TimeEntryForm } from '../components/TimeEntryForm';
 import { ExportModal } from '../components/ExportModal';
 import { getAllTimeEntries, updateTimeEntry, deleteTimeEntry } from '../services/timesheet';
+import { getActivities } from '../services/activities';
 import {
   getCurrentLocalDate,
   formatDateForDisplay,
   getTimezoneName,
 } from '../utils/timezone';
 import { useExport } from '../hooks/useExport';
-import activitiesConfig from '../config/activities.json';
-import type { TimeEntry as TimeEntryType, AppUser } from '../types';
+import type { TimeEntry as TimeEntryType, AppUser, Activity } from '../types';
 import toast from 'react-hot-toast';
 
 export function AdminDashboard() {
   const [entries, setEntries] = useState<TimeEntryType[]>([]);
   const [users, setUsers] = useState<Record<string, AppUser>>({});
+  const [activities, setActivities] = useState<Activity[]>([]);
   const [selectedDate, setSelectedDate] = useState(getCurrentLocalDate());
   const [selectedUser, setSelectedUser] = useState<string>('all');
   const [loading, setLoading] = useState(true);
@@ -29,11 +30,21 @@ export function AdminDashboard() {
 
   useEffect(() => {
     loadUsers();
+    loadActivities();
   }, []);
 
   useEffect(() => {
     loadEntries();
   }, [selectedDate]);
+
+  const loadActivities = async () => {
+    try {
+      const data = await getActivities();
+      setActivities(data);
+    } catch (error) {
+      console.error('Error loading activities:', error);
+    }
+  };
 
   const loadUsers = async () => {
     try {
@@ -310,7 +321,7 @@ export function AdminDashboard() {
               </span>
             </div>
             <TimeEntryForm
-              activities={activitiesConfig.activities}
+              activities={activities}
               onSubmit={handleUpdateEntry}
               onCancel={() => setEditingEntry(null)}
               editingEntry={editingEntry}
@@ -337,7 +348,7 @@ export function AdminDashboard() {
               <TimeEntry
                 key={entry.id}
                 entry={entry}
-                activities={activitiesConfig.activities}
+                activities={activities}
                 onEdit={setEditingEntry}
                 onDelete={handleDeleteEntry}
                 showUser={selectedUser === 'all'}
@@ -352,7 +363,7 @@ export function AdminDashboard() {
         isOpen={showExportModal}
         onClose={() => setShowExportModal(false)}
         users={users}
-        activities={activitiesConfig.activities}
+        activities={activities}
         onExport={exportData}
         isExporting={isExporting}
         exportError={exportError}

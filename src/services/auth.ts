@@ -10,6 +10,8 @@ import {
   doc,
   getDoc,
   setDoc,
+  updateDoc,
+  deleteDoc,
   serverTimestamp,
 } from 'firebase/firestore';
 import { auth, db, firebaseConfig } from './firebase';
@@ -82,4 +84,28 @@ export async function createUser(
     // Clean up secondary app
     await deleteApp(secondaryApp);
   }
+}
+
+export async function updateUser(
+  uid: string,
+  data: { displayName?: string; role?: UserRole }
+): Promise<void> {
+  const updateData: Record<string, unknown> = {
+    updatedAt: serverTimestamp(),
+  };
+
+  if (data.displayName !== undefined) {
+    updateData.displayName = data.displayName;
+  }
+  if (data.role !== undefined) {
+    updateData.role = data.role;
+  }
+
+  await updateDoc(doc(db, 'users', uid), updateData);
+}
+
+export async function deleteUser(uid: string): Promise<void> {
+  // Note: This only deletes the Firestore document
+  // Firebase Auth user deletion requires admin SDK (server-side)
+  await deleteDoc(doc(db, 'users', uid));
 }

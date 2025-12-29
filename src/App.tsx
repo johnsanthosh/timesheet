@@ -6,6 +6,7 @@ import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { UserManagement } from './pages/UserManagement';
+import { ActivityManagement } from './pages/ActivityManagement';
 import './index.css';
 
 function App() {
@@ -35,6 +36,14 @@ function App() {
             element={
               <ProtectedRoute requireAdmin>
                 <UserManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/activities"
+            element={
+              <ProtectedRoute requireAdmin>
+                <ActivityManagement />
               </ProtectedRoute>
             }
           />

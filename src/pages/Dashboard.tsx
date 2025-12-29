@@ -9,24 +9,38 @@ import {
   deleteTimeEntry,
   getUserTimeEntries,
 } from '../services/timesheet';
+import { getActivities } from '../services/activities';
 import {
   getCurrentLocalDate,
   formatDateForDisplay,
 } from '../utils/timezone';
-import activitiesConfig from '../config/activities.json';
-import type { TimeEntry as TimeEntryType } from '../types';
+import type { TimeEntry as TimeEntryType, Activity } from '../types';
 import toast from 'react-hot-toast';
 
 export function Dashboard() {
   const { appUser } = useAuth();
   const [entries, setEntries] = useState<TimeEntryType[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
   const [selectedDate, setSelectedDate] = useState(getCurrentLocalDate());
   const [editingEntry, setEditingEntry] = useState<TimeEntryType | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    loadActivities();
+  }, []);
+
+  useEffect(() => {
     loadEntries();
   }, [appUser?.uid, selectedDate]);
+
+  const loadActivities = async () => {
+    try {
+      const data = await getActivities();
+      setActivities(data);
+    } catch (error) {
+      console.error('Error loading activities:', error);
+    }
+  };
 
   const loadEntries = async () => {
     if (!appUser?.uid) return;
@@ -189,7 +203,7 @@ export function Dashboard() {
         {/* Time Entry Form */}
         <div className="mb-6">
           <TimeEntryForm
-            activities={activitiesConfig.activities}
+            activities={activities}
             onSubmit={editingEntry ? handleUpdateEntry : handleCreateEntry}
             onCancel={editingEntry ? () => setEditingEntry(null) : undefined}
             editingEntry={editingEntry}
@@ -215,7 +229,7 @@ export function Dashboard() {
               <TimeEntry
                 key={entry.id}
                 entry={entry}
-                activities={activitiesConfig.activities}
+                activities={activities}
                 onEdit={setEditingEntry}
                 onDelete={handleDeleteEntry}
               />

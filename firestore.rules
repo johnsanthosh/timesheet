@@ -16,8 +16,17 @@ service cloud.firestore {
       // Only admins can create/update user documents
       allow create, update: if isAdmin();
 
-      // Prevent deletion of user documents
-      allow delete: if false;
+      // Only admins can delete users (but not themselves)
+      allow delete: if isAdmin() && request.auth.uid != userId;
+    }
+
+    // Activities collection
+    match /activities/{activityId} {
+      // Anyone authenticated can read activities
+      allow read: if request.auth != null;
+
+      // Only admins can manage activities
+      allow create, update, delete: if isAdmin();
     }
 
     // Time entries collection

@@ -1,30 +1,79 @@
 # Timesheet Application
 
-A React-based timesheet application with Firebase backend for tracking work hours and activities.
+A modern, responsive React-based timesheet application with Firebase backend for tracking work hours and activities.
 
 ## Features
 
-- User authentication with email/password
-- Role-based access control (Admin/User)
-- Time entry logging with start/end times
-- Configurable activities via JSON file
-- Timezone support (configurable by admin)
-- Admin dashboard with all users' timesheets and summary reports
-- Admin can edit/delete any user's time entries
-- User management (admin-only)
-- Export reports to PDF or CSV (detailed or summary format)
+### Core Features
+- **Time Tracking**: Log work hours with start/end times, activity type, and optional notes
+- **Date Navigation**: Easy navigation between dates with quick-select options
+- **Real-time Totals**: Automatic calculation of daily hours worked
+
+### User Management
+- **Email/Password Authentication**: Secure login via Firebase Auth
+- **Role-based Access Control**: Admin and User roles with different permissions
+- **User CRUD Operations**: Admins can create, edit, and delete user accounts
+
+### Activity Management
+- **Dynamic Activities**: Admins can add, edit, and delete activity types
+- **Color Coding**: Each activity has a customizable color for easy identification
+- **Default Activity**: "Meeting" is created by default; admins can add more
+
+### Admin Dashboard
+- **All Users View**: View time entries from all users in one place
+- **User Filtering**: Filter entries by specific user
+- **Edit/Delete Entries**: Admins can modify any user's time entries
+- **Summary Cards**: Quick overview of hours per user
+
+### Export & Reporting
+- **PDF Export**: Professional PDF reports with company branding
+- **CSV Export**: Spreadsheet-compatible export for further analysis
+- **Date Range Selection**: Today, this week, this month, last month, or custom range
+- **Report Types**:
+  - **Detailed**: Individual time entries with all details
+  - **Summary**: Daily totals grouped by user and activity
+- **Scope Options**: Export all users or a single user
+
+### Responsive Design
+- **Mobile-First**: Optimized for phones, tablets, and desktops
+- **Touch-Friendly**: Large tap targets and swipe-friendly navigation
+- **Adaptive Layout**: Cards on mobile, tables on desktop
 
 ## Tech Stack
 
-- **Frontend**: Vite + React + TypeScript
-- **Styling**: Tailwind CSS
-- **Backend**: Firebase (Authentication + Firestore)
-- **Routing**: React Router v6
+| Category | Technology |
+|----------|------------|
+| Frontend | React 18 + TypeScript |
+| Build Tool | Vite |
+| Styling | Tailwind CSS v4 |
+| Routing | React Router v7 |
+| Backend | Firebase (Auth + Firestore) |
+| PDF Generation | jsPDF + jspdf-autotable |
+| Notifications | react-hot-toast |
 
 ## Prerequisites
 
 - Node.js 18+
+- npm or yarn
 - Firebase project with Authentication and Firestore enabled
+
+## Quick Start
+
+```bash
+# 1. Install dependencies
+npm install
+
+# 2. Copy environment template
+cp .env.example .env
+
+# 3. Add your Firebase config to .env (see Firebase Setup below)
+
+# 4. Create first admin user
+npm run create-admin
+
+# 5. Start development server
+npm run dev
+```
 
 ## Firebase Setup
 
@@ -46,8 +95,9 @@ A React-based timesheet application with Firebase backend for tracking work hour
 4. Choose a location closest to your users
 5. Click **Enable**
 
-### Step 4: Deploy Security Rules (Important!)
-> **Note:** This step is required before login will work. Without these rules, you'll get "Missing or insufficient permissions" errors.
+### Step 4: Deploy Security Rules
+
+> **Important:** This step is required before login will work.
 
 **Option A: Using Firebase CLI (Recommended)**
 ```bash
@@ -56,34 +106,24 @@ firebase deploy --only firestore:rules
 
 **Option B: Manual via Firebase Console**
 1. In Firestore Database, click the **Rules** tab
-2. Copy the contents of [`firestore.rules`](./firestore.rules) from this project and paste them
+2. Copy the contents of [`firestore.rules`](./firestore.rules) and paste them
 3. Click **Publish**
-
-> **Note:** Always refer to the `firestore.rules` file in this repository for the latest security rules. Key permissions:
-> - Users can read/create/update/delete their own time entries
-> - Admins can read/update/delete any user's time entries
-> - Only admins can manage users
 
 ### Step 5: Get Firebase Config
 1. Click the gear icon (Settings) → **Project settings**
 2. Scroll down to **Your apps** section
 3. Click the web icon (`</>`) to add a web app
-4. Enter a nickname (e.g., "Timesheet App") and click **Register app**
-5. Copy the config values shown (you'll need these for the `.env` file)
+4. Enter a nickname and click **Register app**
+5. Copy the config values to your `.env` file
 
 ### Step 6: Create First Admin User
 
-**Quick:** Use `npm run create-admin` (see Option A below)
-
-#### Option A: Using the Setup Script (Recommended)
-
-> **Note:** The `.env` file contains client credentials which can't create users with admin privileges. The script needs a service account key (admin credentials) to bypass security rules and create the first admin user in Firestore.
+**Option A: Using the Setup Script (Recommended)**
 
 1. Download your service account key:
-   - Go to **Firebase Console** → **Project Settings** (gear icon)
-   - Click **Service accounts** tab
+   - Go to **Project Settings** → **Service accounts** tab
    - Click **Generate new private key**
-   - Save the file as `service-account.json` in the project root
+   - Save as `service-account.json` in the project root
 
 2. Run the setup script:
    ```bash
@@ -92,50 +132,32 @@ firebase deploy --only firestore:rules
 
 3. Follow the prompts to enter email, password, and display name
 
-4. Delete the `service-account.json` file after setup (it contains sensitive credentials and is already in `.gitignore`)
+4. Delete `service-account.json` after setup (sensitive credentials)
 
-#### Option B: Manual Setup via Firebase Console
+**Option B: Manual Setup via Firebase Console**
 
-**6a. Create user in Firebase Authentication:**
-1. Go to **Authentication** → **Users** tab
-2. Click **Add user**
-3. Enter email and password
-4. Click **Add user**
-5. **Copy the User UID** (the long string in the "User UID" column) - you'll need this!
+1. **Create user in Authentication:**
+   - Go to **Authentication** → **Users** tab
+   - Click **Add user**, enter email and password
+   - Copy the **User UID**
 
-**6b. Create user document in Firestore:**
-1. Go to **Firestore Database** → **Data** tab
-2. Click **Start collection**
-3. For **Collection ID**, enter: `users`
-4. For **Document ID**, paste the **User UID** you copied (not the email!)
-5. Add the following fields:
+2. **Create user document in Firestore:**
+   - Go to **Firestore Database** → **Data** tab
+   - Create collection `users`
+   - Create document with ID = User UID
+   - Add fields:
+     | Field | Type | Value |
+     |-------|------|-------|
+     | `email` | string | User's email |
+     | `displayName` | string | User's name |
+     | `role` | string | `admin` |
+     | `createdAt` | timestamp | Current time |
 
-| Field | Type | Value |
-|-------|------|-------|
-| `email` | string | The email you used |
-| `displayName` | string | Your name (e.g., "Admin") |
-| `role` | string | `admin` |
-| `createdAt` | timestamp | Click the calendar icon and select current time |
+## Environment Variables
 
-6. Click **Save**
+Create a `.env` file with your Firebase configuration:
 
-## Installation
-
-1. Clone the repository and install dependencies:
-
-```bash
-npm install
-```
-
-2. Create a `.env` file in the root directory:
-
-```bash
-cp .env.example .env
-```
-
-3. Fill in your Firebase configuration in `.env`:
-
-```
+```env
 VITE_FIREBASE_API_KEY=your-api-key
 VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
 VITE_FIREBASE_PROJECT_ID=your-project-id
@@ -144,141 +166,213 @@ VITE_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
 VITE_FIREBASE_APP_ID=your-app-id
 ```
 
-4. Create the first admin user:
+## Firestore Data Structure
 
-```bash
-# Download service account key first (see Step 6 above), then run:
-npm run create-admin
-```
+### Collections
 
-Follow the prompts:
-```
-🔧 Timesheet Admin User Setup
+#### `users`
+Stores user accounts and roles.
 
-Email: admin@example.com
-Password (min 6 characters): ******
-Display Name: Admin User
+| Field | Type | Description |
+|-------|------|-------------|
+| `email` | string | User's email address |
+| `displayName` | string | User's display name |
+| `role` | string | `admin` or `user` |
+| `createdAt` | timestamp | Account creation date |
+| `createdBy` | string | UID of admin who created the user |
+| `updatedAt` | timestamp | Last update date |
 
-✅ Created Firebase Auth user: abc123...
-✅ Created Firestore user document
+#### `timeEntries`
+Stores all time entries.
 
-🎉 Admin user created successfully!
-```
+| Field | Type | Description |
+|-------|------|-------------|
+| `userId` | string | User's UID |
+| `date` | string | Date in YYYY-MM-DD format |
+| `activity` | string | Activity ID |
+| `startTime` | string | Start time in HH:mm (UTC) |
+| `endTime` | string | End time in HH:mm (UTC) |
+| `notes` | string | Optional notes |
+| `createdAt` | timestamp | Entry creation date |
+| `updatedAt` | timestamp | Last update date |
 
-5. Delete the `service-account.json` file after setup (it contains sensitive credentials)
+#### `activities`
+Stores available activity types.
 
-6. Run the development server:
+| Field | Type | Description |
+|-------|------|-------------|
+| `label` | string | Activity display name |
+| `color` | string | Hex color code (e.g., #10B981) |
+| `createdAt` | timestamp | Creation date |
+| `updatedAt` | timestamp | Last update date |
 
-```bash
-npm run dev
-```
+### Security Rules
 
-7. Log in with the admin email/password you created
+See [`firestore.rules`](./firestore.rules) for the complete security rules. Key permissions:
 
-## Troubleshooting
+| Resource | User | Admin |
+|----------|------|-------|
+| Own time entries | Read, Create, Update, Delete | - |
+| All time entries | - | Read, Update, Delete |
+| Own user document | Read | - |
+| All user documents | - | Read, Create, Update, Delete* |
+| Activities | Read | Read, Create, Update, Delete |
 
-### "Missing or insufficient permissions" error
-- Make sure you deployed the Firestore security rules (Step 4 above)
-- Verify the user document in Firestore has the correct User UID as the document ID
-- Check that the `role` field is set to `admin` (lowercase)
-
-### Login succeeds but redirects back to login
-- The user document may not exist in Firestore
-- The document ID must match the User UID exactly (case-sensitive)
-
-### "The query requires an index" error
-Firestore requires composite indexes for queries with multiple fields. When you see this error:
-
-1. Click the link provided in the browser console error message
-2. Click **Create index** in Firebase Console
-3. Wait for the index to build (can take a few minutes)
-
-Alternatively, if you have Firebase CLI installed, you can deploy all indexes at once:
-```bash
-firebase deploy --only firestore:indexes
-```
-
-The required indexes are defined in `firestore.indexes.json`.
-
-## Development
-
-```bash
-npm run dev
-```
-
-## Build
-
-```bash
-npm run build
-```
+*Admins cannot delete themselves
 
 ## Project Structure
 
 ```
-src/
-├── components/          # Reusable UI components
-│   ├── Header.tsx
-│   ├── ProtectedRoute.tsx
-│   ├── TimeEntry.tsx
-│   └── TimeEntryForm.tsx
-├── contexts/            # React contexts
-│   ├── AuthContext.tsx
-│   └── TimezoneContext.tsx
-├── pages/               # Page components
-│   ├── Login.tsx
-│   ├── Dashboard.tsx
-│   ├── AdminDashboard.tsx
-│   └── UserManagement.tsx
-├── services/            # Firebase services
-│   ├── firebase.ts
-│   ├── auth.ts
-│   └── timesheet.ts
-├── config/
-│   └── activities.json  # Configurable activities
-├── types/
-│   └── index.ts         # TypeScript types
-├── utils/
-│   └── timezone.ts      # Timezone utilities
-├── App.tsx
-└── main.tsx
+├── public/
+│   └── logo.png              # App logo (favicon + header)
+├── src/
+│   ├── components/
+│   │   ├── Header.tsx        # Navigation header with mobile menu
+│   │   ├── ProtectedRoute.tsx # Route guard for auth
+│   │   ├── TimeEntry.tsx     # Time entry display card
+│   │   ├── TimeEntryForm.tsx # Time entry create/edit form
+│   │   └── ExportModal.tsx   # Export configuration modal
+│   ├── contexts/
+│   │   └── AuthContext.tsx   # Authentication state management
+│   ├── hooks/
+│   │   └── useExport.ts      # Export functionality hook
+│   ├── pages/
+│   │   ├── Login.tsx         # Login page
+│   │   ├── Dashboard.tsx     # User's timesheet view
+│   │   ├── AdminDashboard.tsx # Admin view of all timesheets
+│   │   ├── UserManagement.tsx # User CRUD page
+│   │   └── ActivityManagement.tsx # Activity CRUD page
+│   ├── services/
+│   │   ├── firebase.ts       # Firebase initialization
+│   │   ├── auth.ts           # Authentication functions
+│   │   ├── timesheet.ts      # Time entry CRUD
+│   │   └── activities.ts     # Activity CRUD
+│   ├── utils/
+│   │   ├── timezone.ts       # Timezone utilities
+│   │   └── export/           # PDF/CSV export utilities
+│   │       ├── types.ts
+│   │       ├── dataTransformer.ts
+│   │       ├── pdfExporter.ts
+│   │       └── csvExporter.ts
+│   ├── types/
+│   │   └── index.ts          # TypeScript type definitions
+│   ├── config/
+│   │   └── activities.json   # Default activity (fallback)
+│   ├── App.tsx               # Main app with routing
+│   ├── main.tsx              # Entry point
+│   └── index.css             # Global styles
+├── firestore.rules           # Firestore security rules
+├── firestore.indexes.json    # Firestore indexes
+└── scripts/
+    └── create-admin.js       # Admin user creation script
 ```
 
-## Configuring Activities
-
-Edit `src/config/activities.json` to customize available activities:
-
-```json
-{
-  "activities": [
-    { "id": "development", "label": "Development", "color": "#3B82F6" },
-    { "id": "meeting", "label": "Meeting", "color": "#10B981" },
-    { "id": "review", "label": "Code Review", "color": "#F59E0B" }
-  ]
-}
-```
-
-## Usage
+## Usage Guide
 
 ### For Users
-1. Log in with your credentials
-2. Use the dashboard to log time entries for the current date
-3. Select an activity, set start/end times, and optionally add notes
-4. Navigate between dates to view/edit past entries
+
+1. **Login**: Enter your email and password
+2. **View Timesheet**: Your current day's entries are shown
+3. **Log Time**:
+   - Select an activity from the dropdown
+   - Set start and end times (use "Now" buttons for current time)
+   - Optionally add notes
+   - Click "Log Time"
+4. **Edit Entry**: Click the pencil icon on any entry
+5. **Delete Entry**: Click the trash icon on any entry
+6. **Navigate Dates**: Use arrows or click the date to pick a different day
 
 ### For Admins
-1. Access "All Timesheets" to view entries from all users
-2. Edit or delete any user's time entries directly from the admin dashboard
-3. Use "Users" to create new user accounts
-4. Export timesheet reports as PDF or CSV:
-   - Choose date range (today, this week, this month, custom)
-   - Select detailed (individual entries) or summary (daily totals) format
-   - Export for all users or a specific user
-5. Click the settings icon to view timezone information
 
-## Adding a Logo
+1. **View All Timesheets**:
+   - Navigate to "All Timesheets" in the menu
+   - Use the user filter to view specific users
+   - Click on user summary cards to filter
 
-To add a logo to the header, place your logo image in the `public/` folder and update the `Header` component usage in your pages to pass the logo path:
+2. **Manage Users**:
+   - Navigate to "Users" in the menu
+   - Click "Add User" to create new accounts
+   - Click edit icon to modify user details
+   - Click delete icon to remove users (cannot delete yourself)
 
-```tsx
-<Header logo="/your-logo.png" />
+3. **Manage Activities**:
+   - Navigate to "Activities" in the menu
+   - Click "Add Activity" to create new activity types
+   - Choose from 8 preset colors
+   - Edit or delete existing activities
+   - Note: At least one activity must exist
+
+4. **Export Reports**:
+   - From Admin Dashboard, click "Export" button
+   - Select date range (or use quick-select buttons)
+   - Choose format: PDF or CSV
+   - Choose type: Detailed (individual entries) or Summary (totals)
+   - Choose scope: All users or specific user
+   - Click "Export" to download
+
+## Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server |
+| `npm run build` | Build for production |
+| `npm run preview` | Preview production build |
+| `npm run lint` | Run ESLint |
+| `npm run create-admin` | Create first admin user |
+
+## Troubleshooting
+
+### "Missing or insufficient permissions" error
+- Deploy Firestore security rules: `firebase deploy --only firestore:rules`
+- Verify user document exists with correct UID as document ID
+- Check that `role` field is set to `admin` (lowercase)
+
+### Login succeeds but redirects back to login
+- User document may not exist in Firestore
+- Document ID must match User UID exactly
+
+### "The query requires an index" error
+1. Click the link in the browser console error
+2. Click **Create index** in Firebase Console
+3. Wait for index to build (few minutes)
+
+Or deploy all indexes:
+```bash
+firebase deploy --only firestore:indexes
 ```
+
+### Activities not loading
+- Check that `activities` collection exists in Firestore
+- Verify security rules are deployed
+- A default "Meeting" activity is created automatically if none exist
+
+## Deployment
+
+### Build for Production
+```bash
+npm run build
+```
+
+The output will be in the `dist/` directory.
+
+### Deploy to Firebase Hosting
+```bash
+# Install Firebase CLI if needed
+npm install -g firebase-tools
+
+# Login to Firebase
+firebase login
+
+# Initialize hosting (if not already done)
+firebase init hosting
+
+# Deploy
+firebase deploy --only hosting
+```
+
+### Environment Variables for Production
+Ensure your production environment has all the `VITE_FIREBASE_*` variables set.
+
+## License
+
+MIT

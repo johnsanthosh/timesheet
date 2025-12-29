@@ -3,7 +3,7 @@ import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { Header } from '../components/Header';
-import { createUser } from '../services/auth';
+import { createUser, updateUser, deleteUser } from '../services/auth';
 import type { AppUser, UserRole } from '../types';
 import toast from 'react-hot-toast';
 
@@ -12,6 +12,7 @@ export function UserManagement() {
   const [users, setUsers] = useState<AppUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [editingUser, setEditingUser] = useState<AppUser | null>(null);
 
   // Form state
   const [email, setEmail] = useState('');
@@ -92,6 +93,67 @@ export function UserManagement() {
     }
   };
 
+  const handleEdit = (user: AppUser) => {
+    setEditingUser(user);
+    setDisplayName(user.displayName);
+    setRole(user.role);
+    setShowForm(false);
+  };
+
+  const handleUpdateUser = async (e: FormEvent) => {
+    e.preventDefault();
+
+    if (!editingUser || !displayName) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await updateUser(editingUser.uid, { displayName, role });
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.uid === editingUser.uid ? { ...u, displayName, role } : u
+        )
+      );
+      setEditingUser(null);
+      setDisplayName('');
+      setRole('user');
+      toast.success('User updated successfully');
+    } catch (error) {
+      console.error('Error updating user:', error);
+      toast.error('Failed to update user');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteUser = async (user: AppUser) => {
+    if (user.uid === appUser?.uid) {
+      toast.error('You cannot delete yourself');
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to delete "${user.displayName}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await deleteUser(user.uid);
+      setUsers((prev) => prev.filter((u) => u.uid !== user.uid));
+      toast.success('User deleted successfully');
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast.error('Failed to delete user');
+    }
+  };
+
+  const cancelEdit = () => {
+    setEditingUser(null);
+    setDisplayName('');
+    setRole('user');
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
@@ -129,7 +191,7 @@ export function UserManagement() {
         </div>
 
         {/* Create User Form */}
-        {showForm && (
+        {showForm && !editingUser && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 mb-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">
               Create New User
@@ -232,6 +294,78 @@ export function UserManagement() {
           </div>
         )}
 
+        {/* Edit User Form */}
+        {editingUser && (
+          <div className="bg-white rounded-xl shadow-sm border border-blue-200 p-4 sm:p-6 mb-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+              Edit User: {editingUser.email}
+            </h2>
+            <form onSubmit={handleUpdateUser} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label
+                    htmlFor="editDisplayName"
+                    className="block text-sm font-medium text-gray-700 mb-1.5"
+                  >
+                    Display Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="editDisplayName"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="editRole"
+                    className="block text-sm font-medium text-gray-700 mb-1.5"
+                  >
+                    Role
+                  </label>
+                  <select
+                    id="editRole"
+                    value={role}
+                    onChange={(e) => setRole(e.target.value as UserRole)}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                    disabled={editingUser.uid === appUser?.uid}
+                  >
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                  {editingUser.uid === appUser?.uid && (
+                    <p className="text-xs text-gray-500 mt-1">You cannot change your own role</p>
+                  )}
+                </div>
+              </div>
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={cancelEdit}
+                  className="w-full sm:w-auto px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full sm:w-auto px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm flex items-center justify-center gap-2"
+                >
+                  {submitting && (
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                  )}
+                  {submitting ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
         {/* Users List */}
         {loading ? (
           <div className="flex justify-center py-12">
@@ -260,6 +394,9 @@ export function UserManagement() {
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                       Created
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Actions
                     </th>
                   </tr>
                 </thead>
@@ -297,6 +434,31 @@ export function UserManagement() {
                           day: 'numeric',
                         })}
                       </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleEdit(user)}
+                            className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Edit user"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteUser(user)}
+                            disabled={user.uid === appUser?.uid}
+                            className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            title={user.uid === appUser?.uid ? "You cannot delete yourself" : "Delete user"}
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -332,13 +494,38 @@ export function UserManagement() {
                           {user.role}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-400 mt-2">
-                        Created {user.createdAt.toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                        })}
-                      </p>
+                      <div className="flex items-center justify-between mt-2">
+                        <p className="text-xs text-gray-400">
+                          Created {user.createdAt.toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                          })}
+                        </p>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleEdit(user)}
+                            className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Edit user"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteUser(user)}
+                            disabled={user.uid === appUser?.uid}
+                            className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            title={user.uid === appUser?.uid ? "You cannot delete yourself" : "Delete user"}
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>

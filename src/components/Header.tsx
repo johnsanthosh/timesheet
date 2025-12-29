@@ -42,6 +42,9 @@ export function Header() {
                 <Link to="/users" className={navLinkClass('/users')}>
                   Users
                 </Link>
+                <Link to="/activities" className={navLinkClass('/activities')}>
+                  Activities
+                </Link>
               </>
             )}
           </nav>
@@ -132,6 +135,13 @@ export function Header() {
                 onClick={closeMobileMenu}
               >
                 Users
+              </Link>
+              <Link
+                to="/activities"
+                className={navLinkClass('/activities', true)}
+                onClick={closeMobileMenu}
+              >
+                Activities
               </Link>
             </>
           )}
