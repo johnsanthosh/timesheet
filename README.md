@@ -2,6 +2,10 @@
 
 A modern, responsive React-based timesheet application with Firebase backend for tracking work hours and activities.
 
+## Demo
+
+[![Timesheet App Demo](https://img.youtube.com/vi/iQH3ySyx8eE/maxresdefault.jpg)](https://www.youtube.com/watch?v=iQH3ySyx8eE)
+
 ## Features
 
 ### Core Features
