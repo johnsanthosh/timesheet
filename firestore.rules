@@ -1,0 +1,47 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function to check if user is admin
+    function isAdmin() {
+      return request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Users collection
+    match /users/{userId} {
+      // Users can read their own document, admins can read all
+      allow read: if request.auth != null &&
+        (request.auth.uid == userId || isAdmin());
+
+      // Only admins can create/update user documents
+      allow create, update: if isAdmin();
+
+      // Prevent deletion of user documents
+      allow delete: if false;
+    }
+
+    // Time entries collection
+    match /timeEntries/{entryId} {
+      // Users can read their own entries, admins can read all
+      allow read: if request.auth != null &&
+        (resource.data.userId == request.auth.uid || isAdmin());
+
+      // Users can create entries for themselves
+      allow create: if request.auth != null &&
+        request.resource.data.userId == request.auth.uid;
+
+      // Users can update/delete their own entries
+      allow update, delete: if request.auth != null &&
+        resource.data.userId == request.auth.uid;
+    }
+
+    // Config collection
+    match /config/{configId} {
+      // Anyone authenticated can read config
+      allow read: if request.auth != null;
+
+      // Only admins can write config
+      allow write: if isAdmin();
+    }
+  }
+}
