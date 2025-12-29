@@ -11,8 +11,12 @@ import {
   getDoc,
   setDoc,
   updateDoc,
-  deleteDoc,
   serverTimestamp,
+  collection,
+  query,
+  where,
+  getDocs,
+  writeBatch,
 } from 'firebase/firestore';
 import { auth, db, firebaseConfig } from './firebase';
 import type { AppUser, UserRole } from '../types';
@@ -105,7 +109,24 @@ export async function updateUser(
 }
 
 export async function deleteUser(uid: string): Promise<void> {
-  // Note: This only deletes the Firestore document
-  // Firebase Auth user deletion requires admin SDK (server-side)
-  await deleteDoc(doc(db, 'users', uid));
+  // Delete all time entries for this user first (cascade delete)
+  const entriesQuery = query(
+    collection(db, 'timeEntries'),
+    where('userId', '==', uid)
+  );
+  const entriesSnapshot = await getDocs(entriesQuery);
+
+  // Use batch delete for efficiency (Firestore allows up to 500 operations per batch)
+  const batch = writeBatch(db);
+  entriesSnapshot.docs.forEach((entryDoc) => {
+    batch.delete(entryDoc.ref);
+  });
+
+  // Delete the user document
+  batch.delete(doc(db, 'users', uid));
+
+  // Commit all deletions
+  await batch.commit();
+
+  // Note: Firebase Auth user deletion requires admin SDK (server-side)
 }

@@ -7,7 +7,8 @@ const mockSignInWithEmailAndPassword = firebaseAuth.signInWithEmailAndPassword a
 const mockFirebaseSignOut = firebaseAuth.signOut as jest.Mock;
 const mockGetDoc = firestore.getDoc as jest.Mock;
 const mockUpdateDoc = firestore.updateDoc as jest.Mock;
-const mockDeleteDoc = firestore.deleteDoc as jest.Mock;
+const mockGetDocs = firestore.getDocs as jest.Mock;
+const mockWriteBatch = firestore.writeBatch as jest.Mock;
 
 describe('auth service', () => {
   beforeEach(() => {
@@ -141,14 +142,50 @@ describe('auth service', () => {
   });
 
   describe('deleteUser', () => {
-    it('deletes user document from Firestore', async () => {
-      mockDeleteDoc.mockResolvedValueOnce(undefined);
+    it('deletes user and their time entries using batch', async () => {
+      const mockBatchDelete = jest.fn();
+      const mockBatchCommit = jest.fn().mockResolvedValue(undefined);
+      mockWriteBatch.mockReturnValue({
+        delete: mockBatchDelete,
+        commit: mockBatchCommit,
+      });
+
+      // Mock time entries for the user
+      mockGetDocs.mockResolvedValueOnce({
+        docs: [
+          { ref: { id: 'entry1' } },
+          { ref: { id: 'entry2' } },
+        ],
+      });
 
       await deleteUser('user123');
 
-      expect(mockDeleteDoc).toHaveBeenCalledWith(
-        expect.objectContaining({ id: 'user123' })
-      );
+      // Should have called writeBatch
+      expect(mockWriteBatch).toHaveBeenCalled();
+
+      // Should delete time entries (2) + user doc (1) = 3 deletes
+      expect(mockBatchDelete).toHaveBeenCalledTimes(3);
+
+      // Should commit the batch
+      expect(mockBatchCommit).toHaveBeenCalled();
+    });
+
+    it('deletes user even with no time entries', async () => {
+      const mockBatchDelete = jest.fn();
+      const mockBatchCommit = jest.fn().mockResolvedValue(undefined);
+      mockWriteBatch.mockReturnValue({
+        delete: mockBatchDelete,
+        commit: mockBatchCommit,
+      });
+
+      // No time entries
+      mockGetDocs.mockResolvedValueOnce({ docs: [] });
+
+      await deleteUser('user123');
+
+      // Should only delete the user doc
+      expect(mockBatchDelete).toHaveBeenCalledTimes(1);
+      expect(mockBatchCommit).toHaveBeenCalled();
     });
   });
 });

@@ -317,6 +317,7 @@ See [`firestore.rules`](./firestore.rules) for the complete security rules. Key 
    - Click "Add User" to create new accounts
    - Click edit icon to modify user details
    - Click delete icon to remove users (cannot delete yourself)
+   - Note: Deleting a user also deletes all their time entries
 
 3. **Manage Activities**:
    - Navigate to "Activities" in the menu

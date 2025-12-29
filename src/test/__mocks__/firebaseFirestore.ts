@@ -15,3 +15,7 @@ export const Timestamp = {
   fromDate: jest.fn((date) => ({ toDate: () => date })),
   now: jest.fn(() => ({ toDate: () => new Date() })),
 };
+export const writeBatch = jest.fn(() => ({
+  delete: jest.fn(),
+  commit: jest.fn(() => Promise.resolve()),
+}));
